@@ -1,9 +1,8 @@
-
 local function print(text)
 	DEFAULT_CHAT_FRAME:AddMessage(text, 0.8, 1, 1)
 end
 
-function copypasta(text)
+local function copypasta(text)
 	URLCopyFrameEditBox:SetText(text)
 	URLCopyFrame:Show()
 end
@@ -16,50 +15,50 @@ local function assign(which_class)
 		return
 	end
 
-	local groups_list = {}	-- list: group number => true
-	local buffers = {}		-- array of names
+	local groups_list = {}	-- assoc array: group number => true if group exists
+	local players = {}		-- list: names of players who buff
 
 	for i = 1, raidsize do
 		local name, _, group, level, class, _, _, online = GetRaidRosterInfo(i)
 		if online then
 			groups_list[group] = true
 			if level == 60 and class == which_class then
-				table.insert(buffers, name)
+				table.insert(players, name)
 			end
 		end
 	end
 
-	local groups = {} -- array of groups
+	local groups = {} -- list: group numbers that require buffs
 
 	for group in groups_list do
 		table.insert(groups, group)
 	end
 
-	table.sort(groups)
-	table.sort(buffers)
-
-	local numpriests = table.getn(buffers)
+	local numpriests = table.getn(players)
 
 	if numpriests == 0 then
 		print("No matching players found.")
 		return
 	end
 
-	local priestgroups = {}	-- list: name => number of groups to buff for this buffer
+	table.sort(groups)
+	table.sort(players)
+
+	local playergroups = {}	-- assoc array: name => number of groups to buff for this player
 
 	local i = 1
 	for _, group in groups do
-		local name = buffers[i]
-		priestgroups[name] = priestgroups[name] and priestgroups[name] + 1 or 1
+		local name = players[i]
+		playergroups[name] = playergroups[name] and playergroups[name] + 1 or 1
 		i = i == numpriests and 1 or i + 1
 	end
 
-	local assignments = {} -- list: name => {array of groups}
+	local assignments = {} -- assoc array: name => {list of groups that this player must buff}
 
-	local i = 1	-- current buffer index
-	local j = 0	-- number of groups assigned to current buffer i
+	local i = 1	-- current player index in 'players'
+	local j = 0	-- number of groups assigned to current player i
 	for _, group in groups do
-		local name = buffers[i]
+		local name = players[i]
 		if not assignments[name] then
 			assignments[name] = {}
 		end
@@ -67,7 +66,7 @@ local function assign(which_class)
 		table.insert(assignments[name], group)
 
 		j = j + 1
-		if j == priestgroups[name] then
+		if j == playergroups[name] then
 			j = 0
 			i = i + 1
 		end
@@ -75,7 +74,7 @@ local function assign(which_class)
 
 	text = which_class .. " Buffs: "
 
-	for _, name in buffers do
+	for _, name in players do
 		local assigngroups = assignments[name]
 		if assigngroups then
 			text = text .. name .. ": "
