@@ -1,0 +1,8 @@
+## Interface: 11200
+## Title: Chronicles|cff60ff00BuffAssignments|r
+## Notes: Command: /assign
+## Author: EinBaum https://github.com/EinBaum
+## Version: 1.0.0
+## RequiredDeps: URLCopy
+
+ChroniclesBuffAssignments.lua
